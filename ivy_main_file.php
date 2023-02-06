@@ -12,7 +12,6 @@ function ivypay_init()
   if (!class_exists('WC_Payment_Gateway'))
     return;
   include_once('ivy_payment_gateway.php');
-  include_once('/ajax-checkout/ajax_checkout.php');
   include_once(plugin_dir_path(__FILE__) . '/frontend/buttons.php');
   include_once(plugin_dir_path(__FILE__) . '/update_settings/update_merchant.php');
 

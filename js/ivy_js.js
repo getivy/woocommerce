@@ -1,7 +1,6 @@
 jQuery(document).ready(function () {
     jQuery('.ivy-checkout-button').click(function () {
-        var siteurl = document.location.origin;
-        var linkUrl = siteurl + '/wp-content/plugins/Ivy_Payment/checkout/express_checkout.php';
+        var linkUrl = document.location.origin + '/wp-content/plugins/Ivy_Payment/checkout/express_checkout.php';
         console.log(linkUrl);
         jQuery.ajax({
             type: "post",

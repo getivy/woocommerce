@@ -23,7 +23,6 @@ class Ivy_Pay extends WC_Payment_Gateway
     foreach ($this->settings as $setting_key => $value) {
       $this->$setting_key = $value;
     }
-
     // Save settings
     if (is_admin()) {
       add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
@@ -48,10 +47,10 @@ class Ivy_Pay extends WC_Payment_Gateway
         'default' => __('Successfully pay through Ivy.', 'ivypay'),
         'css' => 'max-width:450px;'
       ),
-      'storename' => array(
-        'title' => __('Storename', 'ivyPay'),
-        'type' => 'text',
-      ),
+      // 'storename' => array(
+      //   'title' => __('Storename', 'ivyPay'),
+      //   'type' => 'text',
+      // ),
       'sandbox' => array(
         'title' => __('Activate Sand Box', 'ivyPay'),
         'type' => 'select',
@@ -72,12 +71,6 @@ class Ivy_Pay extends WC_Payment_Gateway
         'title' => __('Sort Order', 'ivyPay'),
         'type' => 'text',
       ),
-      'debug' => array(
-        'title' => __('Debug', 'ivyPay'),
-        'desc' => 'Log file path: var/log/debug.log',
-        'type' => 'text',
-      ),
-
       'product_page_theme' => array(
         'title' => __('Light theme on Catalog Product Page', 'ivyPay'),
         'type' => 'select',
@@ -85,7 +78,6 @@ class Ivy_Pay extends WC_Payment_Gateway
           'No' => __('No', 'ivypay'),
           'Yes' => __('Yes', 'ivypay')
         )
-
       ),
       'mini_cart_theme' => array(
         'title' => __('Light theme on Mini Cart', 'ivyPay'),

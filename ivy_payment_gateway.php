@@ -47,10 +47,6 @@ class Ivy_Pay extends WC_Payment_Gateway
         'default' => __('Successfully pay through Ivy.', 'ivypay'),
         'css' => 'max-width:450px;'
       ),
-      // 'storename' => array(
-      //   'title' => __('Storename', 'ivyPay'),
-      //   'type' => 'text',
-      // ),
       'sandbox' => array(
         'title' => __('Activate Sand Box', 'ivyPay'),
         'type' => 'select',
@@ -67,6 +63,14 @@ class Ivy_Pay extends WC_Payment_Gateway
         'title' => __('Sandbox webhook signing secret', 'ivyPay'),
         'type' => 'text',
       ),
+      'ivyapikeylive' => array(
+        'title' => __('Ivy Live API Key', 'ivyPay'),
+        'type' => 'text',
+      ),
+      'ivysigningsecretlive' => array(
+        'title' => __('Webhook signing secret', 'ivyPay'),
+        'type' => 'text',
+      ),
       'sortorder' => array(
         'title' => __('Sort Order', 'ivyPay'),
         'type' => 'text',
@@ -78,15 +82,6 @@ class Ivy_Pay extends WC_Payment_Gateway
           'No' => __('No', 'ivypay'),
           'Yes' => __('Yes', 'ivypay')
         )
-      ),
-      'mini_cart_theme' => array(
-        'title' => __('Light theme on Mini Cart', 'ivyPay'),
-        'type' => 'select',
-        'options' => array(
-          'Yes' => __('Yes', 'ivypay'),
-          'No' => __('No', 'ivypay')
-        ),
-        'desc' => 'Select No for dark theme'
       ),
       'cart_page_theme' => array(
         'title' => __('Light theme on Cart Page', 'ivyPay'),

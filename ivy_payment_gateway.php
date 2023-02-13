@@ -32,14 +32,12 @@ class Ivy_Pay extends WC_Payment_Gateway
   public function init_form_fields()
   {
     $this->form_fields = array(
-      'enabled' => array(
-        'title' => __('Enabled', 'ivyPay'),
-        'type' => 'select',
-        'options' => array(
-          'Yes' => __('Yes', 'ivypay'),
-          'No' => __('No', 'ivypay')
-        )
-      ),
+        'enabled' => array(
+          'title' => __( 'Enable/Disable', 'woocommerce' ),
+          'type' => 'checkbox',
+          'label' => __( 'Enable Custom Payment Method', 'woocommerce' ),
+          'default' => 'yes'
+        ),
       'description' => array(
         'title' => __('Description', 'ivypay'),
         'type' => 'textarea',
@@ -99,7 +97,7 @@ class Ivy_Pay extends WC_Payment_Gateway
           'Yes' => __('Yes', 'ivypay'),
           'No' => __('No', 'ivypay')
         )
-      ),
+      )
     );
   }
   public function process_payment($order_id)

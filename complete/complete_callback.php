@@ -1,5 +1,5 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
+require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-load.php';
 $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
 $ivysandboxsecret = $installed_payment_methods["ivy_payment"]->ivysigningsecret;
 $option = $installed_payment_methods["ivy_payment"]->sandbox;
@@ -20,7 +20,7 @@ if ($header_value === $hash) {
     global $woocommerce;
     session_start();
     $data = [
-        'redirectUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/success/success_callback.php'
+        'redirectUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/success/success_callback.php',
     ];
     $hash = hash_hmac(
         'sha256',
@@ -33,4 +33,3 @@ if ($header_value === $hash) {
 } else {
     return false;
 }
-?>

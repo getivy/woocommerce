@@ -1,5 +1,5 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
+require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-load.php';
 
 $order = new WC_Order();
 $product = WC()->cart->get_cart();
@@ -44,7 +44,7 @@ $data = array(
         // Shipping is zero because before entering address, shipping method is not selected.
         'shipping' => 0,
         'total' => $carttotal,
-        'currency' => $currency
+        'currency' => $currency,
     ),
     'lineItems' => $multi_items_array,
     'required' => array('phone' => true),
@@ -66,12 +66,12 @@ curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
-curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
 curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT    5.0');
 $headers = [
     'content-type: application/json',
-    'X-Ivy-Api-Key:' . $ivykey . ''
+    'X-Ivy-Api-Key:' . $ivykey . '',
 ];
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 $exe = curl_exec($ch);
@@ -83,5 +83,3 @@ if (curl_error($ch)) {
     $output .= "\n" . curl_error($ch);
 }
 curl_close($ch);
-
-?>

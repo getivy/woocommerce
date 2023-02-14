@@ -10,7 +10,7 @@ function ivyconfig_updated_option()
         'quoteCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/quote/quote_callback.php',
         'webhookUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/success/success_callback.php',
         'completeCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/complete/complete_callback.php',
-        'shopLogo' => 'https://49ff7bbedf.nxcli.net/media/logo/stores/1/schraubdoc_final_logo-2019-v4-lang-375x100.png'
+        'shopLogo' => 'https://49ff7bbedf.nxcli.net/media/logo/stores/1/schraubdoc_final_logo-2019-v4-lang-375x100.png',
     ];
     $url = "https://api.stage.getivy.de/api/service/merchant/update";
     $post = json_encode($data, JSON_UNESCAPED_SLASHES);
@@ -21,12 +21,12 @@ function ivyconfig_updated_option()
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
     curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT    5.0');
     $headers = [
         'content-type: application/json',
-        'X-Ivy-Api-Key:'.$ivysandboxkey.''
+        'X-Ivy-Api-Key:' . $ivysandboxkey . '',
     ];
     curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
     curl_exec($ch);
@@ -35,4 +35,3 @@ function ivyconfig_updated_option()
     }
     curl_close($ch);
 }
-?>

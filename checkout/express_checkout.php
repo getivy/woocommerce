@@ -9,13 +9,7 @@ $multi_items_array = [];
 global $woocommerce, $post;
 $order_id = $order->save();
 $cart = WC()->session->get('cart');
-
-if ($current_shipping_cost == 'Free!') {
-    $current_shipping_cost = 0;
-}
-
 foreach ($product as $item => $values) {
-
     $items['name'] = $values['data']->name;
     $items['referenceId'] = $values['product_id'];
     $items['singleNet'] = $values['data']->price;
@@ -23,9 +17,23 @@ foreach ($product as $item => $values) {
     $items['amount'] = $values['data']->price;
     $items['quantity'] = $values['quantity'];
     $items['image'] = "";
+    $product = wc_get_product($values['product_id']);
+    $item = new WC_Order_Item_Product();
+    // Set the item details
+    $item->set_props(
+        array(
+            'product' => $product,
+            'quantity' => $values['quantity'],
+            'subtotal' => $values['line_subtotal'],
+            'total' => $values['line_total'],
+        )
+    );
+    // Add the item to the order
+    $item->set_order_id($order_id);
+    $item->save();
     $multi_items_array[] = $items;
-
 }
+$order->calculate_totals();
 $data = array(
     'express' => true,
     'referenceId' => $order_id,
@@ -33,7 +41,8 @@ $data = array(
     'price' => array(
         'totalNet' => $carttotal,
         'vat' => 0,
-        'shipping' => 50,
+        // Shipping is zero because before entering address, shipping method is not selected.
+        'shipping' => 0,
         'total' => $carttotal,
         'currency' => $currency
     ),
@@ -47,10 +56,10 @@ $ivysandboxkey = $installed_payment_methods["ivy_payment"]->ivyapikey;
 $option = $installed_payment_methods["ivy_payment"]->sandbox;
 $ivylivekey = $installed_payment_methods["ivy_payment"]->ivyapikeylive;
 $ivykey = $ivysandboxkey;
-if ($option == "No"){
-  $ivykey = $ivylivekey;
+if ($option == "No") {
+    $ivykey = $ivylivekey;
 }
-// Sending Curl Request
+// $chosen_shipping_method = WC()->session->get( 'chosen_shipping_methods' );
 $ch = curl_init();
 curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_POST, true);

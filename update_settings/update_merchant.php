@@ -5,11 +5,11 @@ add_action('woocommerce_update_options', 'ivyconfig_updated_option', 10, 3);
 function ivyconfig_updated_option()
 {
     $data = [
-        'successCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/complete/success_callback.php',
+        'successCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/success/success_callback.php',
         'errorCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/fail/failed_callback.php',
-        'quoteCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/complete/success_callback.php',
-        'webhookUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/complete/success_callback.php',
-        'completeCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/complete/success_callback.php',
+        'quoteCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/quote/quote_callback.php',
+        'webhookUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/success/success_callback.php',
+        'completeCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/complete/complete_callback.php',
         'shopLogo' => 'https://49ff7bbedf.nxcli.net/media/logo/stores/1/schraubdoc_final_logo-2019-v4-lang-375x100.png'
     ];
     $url = "https://api.stage.getivy.de/api/service/merchant/update";

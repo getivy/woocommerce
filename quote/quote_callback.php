@@ -1,8 +1,5 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
-if (!class_exists('WooCommerce')) {
-    include_once('wp-content/plugins/woocommerce/woocommerce.php');
-}
+require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-load.php';
 $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
 $ivysandboxsecret = $installed_payment_methods["ivy_payment"]->ivysigningsecret;
 $option = $installed_payment_methods["ivy_payment"]->sandbox;
@@ -13,7 +10,8 @@ if ($option == "No") {
 }
 $header = getallheaders();
 $header_value = $header['X-Ivy-Signature'];
-$orderId = $_GET['reference'];
+// $order = wc_create_order();
+$cartHashId = $_GET['reference'];
 $request = file_get_contents("php://input");
 $hash = hash_hmac(
     'sha256',
@@ -24,6 +22,7 @@ if ($header_value === $hash) {
     $request2 = json_decode(json_encode($request), true);
     $request2 = json_decode((string) $request);
     $array = json_decode(json_encode($request2), true);
+    // error_log(print_r($array,true));
     $address = array(
         'first_name' => $array['shipping']['shippingAddress']['firstName'],
         'last_name' => $array['shipping']['shippingAddress']['lastName'],
@@ -31,19 +30,26 @@ if ($header_value === $hash) {
         'address_2' => $array['shipping']['shippingAddress']['line2'],
         'company' => '',
         'city' => $array['shipping']['shippingAddress']['city'],
-        'state' => $array['shipping']['shippingAddress']['country'],
+        'state' => $array['shipping']['shippingAddress']['region'],
         'postcode' => $array['shipping']['shippingAddress']['zipCode'],
         'country' => $array['shipping']['shippingAddress']['country'],
         'phone' => $array['shopperPhone'],
-        'email' => $array['shopperEmail']
+        'email' => $array['shopperEmail'],
     );
-    $order = wc_get_order($orderId);
-    $order->set_address($address, 'shipping');
-    $order->set_address($address, 'billing');
-    $order->save();
+    $address_contents = json_encode($address);
+    global $wpdb;
+    $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
+    $wpdb->update(
+        $custom_cart_session_table_name,
+        array('address_contents' => $address_contents),
+        array('cart_hash_id' => $cartHashId)
+    );
+
     $country[] = $address['country'];
     $country_name = $address['country'];
     $zone_ids = array_keys(array('') + WC_Shipping_Zones::get_zones());
+    $shippingMethods = array();
+
     // Loop through shipping Zones IDs
     foreach ($zone_ids as $zone_id) {
         // Get the shipping Zone object
@@ -51,26 +57,82 @@ if ($header_value === $hash) {
         $shippinglocations = $shipping_zone->get_zone_locations();
         $country_codes = array();
         foreach ($shippinglocations as $shipping_location) {
-            if ($shipping_location->code == $country_name) {
-                // Get all shipping method values for the shipping zone
-                $shipping_methods = $shipping_zone->get_shipping_methods(true, 'values');
-                // Loop through each shipping methods set for the current shipping zone
-                foreach ($shipping_methods as $instance_id => $shipping_method) {
-                    $shipping_cost = $shipping_method->cost;
-                    $shipping_method_title = $shipping_method->title;
-                    $shipping_method_id = $shipping_method->id;
-                    $shippingMethods[] = [
-                        'price' => $shipping_cost,
-                        'name' => $shipping_method_title,
-                        'countries' => $country,
-                        'reference' => $shipping_method_id
-                    ];
+            $state_name = '';
+
+            if ($shipping_location->type == 'state') {
+                // $state_code = $shipping_location->code;
+                $wp_state = explode(":", $shipping_location->code);
+                $state_code = $wp_state[1]; // Replace with the state code you want to look up
+
+                $states = WC()->countries->states[$country_name]; // Get the list of states for the US
+
+                if (isset($states[$state_code])) {
+                    $state_name = $states[$state_code]; // Get the state name
+
+                }
+
+                if ($state_name == $address['state']) {
+                    $shipping_methods = $shipping_zone->get_shipping_methods(true, 'values');
+                    // Loop through each shipping methods set for the current shipping zone
+                    foreach ($shipping_methods as $instance_id => $shipping_method) {
+                        $shipping_cost = $shipping_method->cost;
+                        $shipping_method_title = $shipping_method->title;
+                        $shipping_method_id = $shipping_method->id;
+
+                        $shippingMethods[] = [
+                            'price' => $shipping_cost,
+                            'name' => $shipping_method_title,
+                            'countries' => $country,
+                            'reference' => $shipping_method_id,
+                        ];
+                    }
+                } elseif (strpos($state_code, $address['state']) !== false) {
+
+                    $shipping_methods = $shipping_zone->get_shipping_methods(true, 'values');
+                    // Loop through each shipping methods set for the current shipping zone
+                    foreach ($shipping_methods as $instance_id => $shipping_method) {
+                        $shipping_cost = $shipping_method->cost;
+                        $shipping_method_title = $shipping_method->title;
+                        $shipping_method_id = $shipping_method->id;
+
+                        $shippingMethods[] = [
+                            'price' => $shipping_cost ? $shipping_cost : 0,
+                            'name' => $shipping_method_title,
+                            'countries' => $country,
+                            'reference' => $shipping_method_id,
+                        ];
+                    }
                 }
             }
         }
     }
+    $cart = WC()->cart;
+    $cart->apply_coupon($coupon_code);
+    $total_price = $cart->total;
+    $coupon_amount = 0;
+    $coupon = new WC_Coupon($coupon_code);
+    $coupon_amount = $coupon->get_amount();
 
+    if ($coupon_amount > 0) {
+        $discount = ['amount' => $coupon_amount];
+        $data['discount'] = $discount;
+        $data['price'] = [
+            'totalNet' => $total_price,
+            'vat' => 123,
+            'total' => $total_price,
+        ];
+    }
     $data['shippingMethods'] = $shippingMethods;
+
+    if ($coupon_amount > 0) {
+        $discount = ['amount' => $coupon_amount];
+        $data['discount'] = $discount;
+        $data['price'] = [
+            'totalNet' => $total_price,
+            'vat' => 32,
+            'total' => $total_price,
+        ];
+    }
     $hash = hash_hmac(
         'sha256',
         json_encode($data, JSON_UNESCAPED_SLASHES, JSON_UNESCAPED_UNICODE),
@@ -82,5 +144,3 @@ if ($header_value === $hash) {
 } else {
     return false;
 }
-
-?>

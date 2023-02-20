@@ -1,14 +1,66 @@
 <?php
 require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-load.php';
-
-$order = new WC_Order();
+// $order = new WC_Order();
 $product = WC()->cart->get_cart();
+$cart = WC()->cart;
+$session = WC()->session;
+$unique_id = wc_rand_hash();
+
+global $wpdb;
+$custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
+$cart_session_id = $session->get_session_cookie();
+$user_id = get_current_user_id();
+
+$cart_session_id = (string) $cart_session_id[3];
+$db_cart_session_result = $wpdb->get_results(
+    $wpdb->prepare("SELECT cart_session_id FROM $custom_cart_session_table_name WHERE cart_session_id = %s", $cart_session_id)
+);
+$user_id_result = $wpdb->get_results(
+    $wpdb->prepare("SELECT user_id, cart_session_id FROM $custom_cart_session_table_name WHERE user_id = %d", $user_id)
+);
+
+$db_user_id = '';
+$db_cart_session_id = '';
+foreach ($user_id_result as $result) {
+    // Access the user_id value for each row
+    $db_user_id = $result->user_id;
+    // Do something with $user_id here
+}
+
+foreach ($db_cart_session_result as $result) {
+    // Access the user_id value for each row
+    $db_cart_session_id = $result->cart_session_id;
+    // Do something with $user_id here
+}
+
+if ($db_cart_session_id) {
+    $wpdb->update(
+        $custom_cart_session_table_name,
+        array('cart_hash_id' => $unique_id),
+        array('cart_session_id' => $cart_session_id)
+    );
+} elseif ($db_user_id) {
+
+    $wpdb->update(
+        $custom_cart_session_table_name,
+        array(
+            'cart_hash_id' => $unique_id,
+            'cart_session_id' => $cart_session_id,
+        ),
+        array('user_id' => $user_id)
+    );
+}
+
+// $applied_tax = $cart->get_cart_contents_tax();
 $carttotal = WC()->cart->cart_contents_total;
+$cart_id = WC()->cart->get_cart_hash();
+// error_log($cart_id);
 $currency = get_option('woocommerce_currency');
-$multi_items_array = [];
+$ivyLineItems = array();
 global $woocommerce, $post;
-$order_id = $order->save();
-$cart = WC()->session->get('cart');
+// $order_id = $order->save();
+// error_log($order_id);
+// $cart = WC()->session->get('cart');
 foreach ($product as $item => $values) {
     $items['name'] = $values['data']->name;
     $items['referenceId'] = $values['product_id'];
@@ -17,26 +69,12 @@ foreach ($product as $item => $values) {
     $items['amount'] = $values['data']->price;
     $items['quantity'] = $values['quantity'];
     $items['image'] = "";
-    $product = wc_get_product($values['product_id']);
-    $item = new WC_Order_Item_Product();
-    // Set the item details
-    $item->set_props(
-        array(
-            'product' => $product,
-            'quantity' => $values['quantity'],
-            'subtotal' => $values['line_subtotal'],
-            'total' => $values['line_total'],
-        )
-    );
-    // Add the item to the order
-    $item->set_order_id($order_id);
-    $item->save();
-    $multi_items_array[] = $items;
+    $ivyLineItems[] = $items;
 }
-$order->calculate_totals();
+
 $data = array(
     'express' => true,
-    'referenceId' => $order_id,
+    'referenceId' => $unique_id,
     'category' => "5712",
     'price' => array(
         'totalNet' => $carttotal,
@@ -46,7 +84,7 @@ $data = array(
         'total' => $carttotal,
         'currency' => $currency,
     ),
-    'lineItems' => $multi_items_array,
+    'lineItems' => $ivyLineItems,
     'required' => array('phone' => true),
 );
 $url = "https://api.stage.getivy.de/api/service/checkout/session/create";

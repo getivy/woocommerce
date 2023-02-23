@@ -23,21 +23,24 @@ class Ivy_Pay extends WC_Payment_Gateway
     foreach ($this->settings as $setting_key => $value) {
       $this->$setting_key = $value;
     }
+
     // Save settings
     if (is_admin()) {
       add_action('woocommerce_update_options_payment_gateways_' . $this->id, array($this, 'process_admin_options'));
+      // add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'save_settings' ) );
     }
+
   } // Here is the  End __construct()
   // administration fields for specific Gateway
   public function init_form_fields()
   {
     $this->form_fields = array(
-        'enabled' => array(
-          'title' => __( 'Enable/Disable', 'woocommerce' ),
-          'type' => 'checkbox',
-          'label' => __( 'Enable Custom Payment Method', 'woocommerce' ),
-          'default' => 'yes'
-        ),
+      'enabled' => array(
+        'title' => __('Enable/Disable', 'woocommerce'),
+        'type' => 'checkbox',
+        'label' => __('Enable Custom Payment Method', 'woocommerce'),
+        'default' => 'yes'
+      ),
       'description' => array(
         'title' => __('Description', 'ivypay'),
         'type' => 'textarea',
@@ -66,7 +69,7 @@ class Ivy_Pay extends WC_Payment_Gateway
         'type' => 'text',
       ),
       'ivysigningsecretlive' => array(
-        'title' => __('Webhook signing secret', 'ivyPay'),
+        'title' => __('Live webhook signing secret', 'ivyPay'),
         'type' => 'text',
       ),
       'sortorder' => array(
@@ -98,16 +101,6 @@ class Ivy_Pay extends WC_Payment_Gateway
           'No' => __('No', 'ivypay')
         )
       )
-    );
-  }
-  public function process_payment($order_id)
-  {
-    global $woocommerce;
-    $customer_order = new WC_Order($order_id);
-    $redirectlink = get_site_url() . '/wp-content/plugins/Ivy_Payment/checkout/normal_checkout.php';
-    return array(
-      'result' => 'success',
-      'redirect' => $redirectlink,
     );
   }
 }

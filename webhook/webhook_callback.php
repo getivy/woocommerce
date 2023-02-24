@@ -16,7 +16,7 @@ $type = $data->type;
 if($type === 'order_updated' || $type === 'order_created')
 {
   
-    if($data->payload->status === 'failed' || $data->payload->status === 'canceled')
+    if($data->payload->status === 'canceled')
             {
                 
                 if ( ! $order->has_invoice() ) {

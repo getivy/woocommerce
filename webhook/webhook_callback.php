@@ -15,39 +15,35 @@ $order = wc_get_order($orderId);
 $type = $data->type;
 if($type === 'order_updated' || $type === 'order_created')
 {
-  
-    if($data->payload->status === 'canceled')
+
+    if($data->payload->paymentStatus === 'failed' || $data->payload->paymentStatus === 'canceled' || $data->payload->status === 'failed' || $data->payload->status === 'canceled')
             {
-                
+
                 if ( ! $order->has_invoice() ) {
                     $note = 'Order cancelled by admin.';
                     $reason = 'Cancelled by admin.';
                     $refund = false;
                     $cancelled = wc_cancel_order( $orderId, $note, $reason, $refund );
                 }
+                else{
+                    $refund = wc_create_refund( array(
+                        'amount' => $order->get_total(),
+                        'reason' => 'Refund requested by customer.',
+                        'order_id' => $orderId,
+                      ) );
+                    $refund->save();
+                    $order->add_refund( $refund );
+                    $order->save();
+                }
 
             }
-    elseif($data->payload->status === 'paid')
+    elseif($data->payload->paymentStatus === 'paid')
     {
-        $order->update_status( 'processing' );
+        $order->update_status( 'completed' );
 
     }
-    elseif($data->payload->status === 'waiting_for_payment')
-    {
-        $order->update_status( 'pending' );
-    }
-    elseif($data->payload->status === 'refunded')
-    {
-    
-        $refund = wc_create_refund( array(
-            'amount' => $order->get_total(),
-            'reason' => 'Refund requested by customer.',
-            'order_id' => $orderId,
-          ) );
-        $refund->save();
-        $order->add_refund( $refund );
-        $order->update_status( 'refunded' );
-        $order->save();
+    else{
+        $order->update_status( 'completed' );
     }
 
 }

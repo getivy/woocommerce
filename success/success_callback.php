@@ -21,6 +21,5 @@ $order->save();
 
 $order_key = $order->order_key;
 $woocommerce->cart->empty_cart();
-$order->update_status('processing');
 header('Location:' . $checkouturl . '?order-received=' . $orderId . '&key=' . $order_key);
 ?>

@@ -1,19 +1,24 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
-error_log("Webhook called");
 $header = getallheaders();
 $header_value = $header['X-Ivy-Signature'];
 $request = file_get_contents("php://input");
-error_log(print_r($request,true));
 $data = json_decode($request);
-error_log(print_r($request,true));
-$orderId = $data->payload->referenceId;
+$cartHashId = $data->payload->referenceId;
+global $wpdb;
+$custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
+$cart_results = $wpdb->get_results($wpdb->prepare("SELECT order_id FROM $custom_cart_session_table_name WHERE cart_hash_id = %s", $cartHashId));
+foreach ($cart_results as $cart_result) {
+    $orderId = $cart_result->order_id;
+ }
 $order = wc_get_order($orderId);
-$type = $arrData->type;
+$type = $data->type;
 if($type === 'order_updated' || $type === 'order_created')
 {
+  
     if($data->payload->paymentStatus === 'failed' || $data->payload->paymentStatus === 'canceled' || $data->payload->status === 'failed' || $data->payload->status === 'canceled')
             {
+                
                 if ( ! $order->has_invoice() ) {
                     $note = 'Order cancelled by admin.';
                     $reason = 'Cancelled by admin.';
@@ -35,19 +40,12 @@ if($type === 'order_updated' || $type === 'order_created')
     elseif($data->payload->paymentStatus === 'paid')
     {
         $order->update_status( 'completed' );
-        $order->save();
 
     }
     else{
         $order->update_status( 'completed' );
-        $order->save();
     }
-   error_log($type);
-}
-else{
 
-    error_log("Order Not updated");
 }
 
-error_log("Ivy Webhook called after request");
 ?>

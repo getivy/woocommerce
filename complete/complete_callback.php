@@ -1,5 +1,7 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
+define('ABSPATH', dirname(__FILE__) . '/');
+require_once(ABSPATH . 'wp-includes/user.php');
 $request = file_get_contents("php://input");
 $data = json_decode($request);
 $cartHashId = $_GET['reference'];
@@ -7,6 +9,7 @@ $complete_request = $_GET;
 $shipping_method = $data->shippingMethod->reference;
 $shipping_title = $data->shippingMethod->name;
 $shipping_price = $data->shippingMethod->price;
+
 
 $order = new WC_Order();
 $cartHashId = $_GET['reference'];
@@ -48,21 +51,31 @@ $shipping->set_method_id($shipping_method);
 $shipping->set_total($shipping_price);
 $order->add_item($shipping);
 
+if($coupon_code){
+   $coupon = new WC_Coupon( $coupon_code );
+   $item = new WC_Order_Item_Coupon();
+   $item->set_code( $coupon_code );
+   $item->set_discount( $coupon->get_amount() );
+   $order->add_item( $item );
+}
 $order_key = $order->order_key;
 $cart_items = $cart;
-error_log(print_r($cart, true));
 foreach ($cart_items as $item_values) {
     $product_id = $item_values->product_id;
     $quantity = $item_values->quantity;
     $variation_id = $item_values->variation_id;
     $variation = $item_values->variation;
     $product = wc_get_product($product_id);
-    $order->add_product($product, $quantity, array(
-        'variation_id' => $variation_id,
-        'variation' => $variation,
-    )
+    $order->add_product(
+        $product,
+        $quantity,
+        array(
+            'variation_id' => $variation_id,
+            'variation' => $variation,
+        )
     );
 }
+
 $order->set_payment_method('ivy_payment');
 $order->set_payment_method_title('Ivy Payment');
 $order->calculate_totals();
@@ -70,7 +83,7 @@ $order->calculate_totals();
 $orderId = $order->save();
 $wpdb->update(
     $custom_cart_session_table_name,
-    array('user_id' => $orderId),
+    array('order_id' => $orderId),
     array('cart_hash_id' => $cartHashId)
 );
 
@@ -96,7 +109,7 @@ if ($header_value === $hash) {
     global $woocommerce;
     session_start();
     $data = [
-        'redirectUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/success/success_callback.php'
+        'redirectUrl' => get_site_url().'/wp-content/plugins/Ivy_Payment/success/success_callback.php'
     ];
     $hash = hash_hmac(
         'sha256',

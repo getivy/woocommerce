@@ -72,6 +72,7 @@ if ($db_cart_session_id) {
       'shipping_method' => $shipping_method_id,
       'shipping_price' => $shipping_total,
       'cart_hash_id' => $unique_id,
+      'is_express' => 0,
     ),
     array('cart_session_id' => $cart_session_id)
   );
@@ -86,6 +87,7 @@ if ($db_cart_session_id) {
       'shipping_method' => $shipping_method_id,
       'shipping_price' => $shipping_total,
       'cart_hash_id' => $unique_id,
+      'is_express' => 0,
     ),
     array('user_id' => $user_id)
   );
@@ -96,13 +98,13 @@ if ($db_cart_session_id) {
     'session_expiry' => $session_expiry,
     'cart_contents' => $cart_contents,
     'cart_hash_id' => $unique_id,
+    'is_express' => 0,
   )
   );
 }
 global $woocommerce;
 $subtotal = WC()->cart->get_subtotal();
 $carttotal = $woocommerce->cart->total;
-
 $tax = WC()->cart->tax_total;
 $cart_id = WC()->cart->get_cart_hash();
 $currency = get_option('woocommerce_currency');
@@ -130,16 +132,21 @@ foreach ($applied_coupons as $coupon_code) {
     'amount' => -$amount
   ];
   $ivyLineItems[] = $lineItem;
+  $coupon_codes[] = $coupon_code;
   if ($coupon_code) {
+    $cart->apply_coupon($coupon_code);
+    $carttotal = $cart->get_total('edit');
     $wpdb->update(
       $custom_cart_session_table_name,
       array(
-        'coupon_code' => $coupon_code,
+        'coupon_code' => $coupon_codes,
+        'cart_total' => $carttotal
       ),
-      array('user_id' => $user_id)
+      array('cart_hash_id' => $unique_id)
     );
   }
 }
+
 $prefill = ["email" => $formData['billing_email']];
 $billingAddress = array(
   'firstName' => $formData['billing_first_name'],

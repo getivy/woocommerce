@@ -42,8 +42,22 @@ if($type === 'order_updated' || $type === 'order_created')
         $order->update_status( 'processing' );
 
     }
-    else{
-        $order->update_status( 'completed' );
+    elseif($data->payload->status === 'waiting_for_payment')
+    {
+        $order->update_status( 'pending' );
+    }
+    elseif($data->payload->status === 'refunded')
+    {
+    
+        $refund = wc_create_refund( array(
+            'amount' => $order->get_total(),
+            'reason' => 'Refund requested by customer.',
+            'order_id' => $orderId,
+          ) );
+        $refund->save();
+        $order->add_refund( $refund );
+        $order->update_status( 'refunded' );
+        $order->save();
     }
 
 }

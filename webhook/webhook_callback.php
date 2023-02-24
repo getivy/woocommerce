@@ -39,7 +39,7 @@ if($type === 'order_updated' || $type === 'order_created')
             }
     elseif($data->payload->paymentStatus === 'paid')
     {
-        $order->update_status( 'completed' );
+        $order->update_status( 'processing' );
 
     }
     else{

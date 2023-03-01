@@ -36,6 +36,11 @@ if ($header_value === $hash) {
             'email' => $array['shopperEmail'],
         );
         $address_contents = json_encode($address);
+        $customerData = array(
+           'phone' => $array['shopperPhone'],
+           'email' => $array['shopperEmail'],
+        )
+        $customer_data = json_encode($customerData);
         global $wpdb;
         $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
         $wpdb->update(

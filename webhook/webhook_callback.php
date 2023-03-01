@@ -25,16 +25,6 @@ if($type === 'order_updated' || $type === 'order_created')
                     $refund = false;
                     $cancelled = wc_cancel_order( $orderId, $note, $reason, $refund );
                 }
-                else{
-                    $refund = wc_create_refund( array(
-                        'amount' => $order->get_total(),
-                        'reason' => 'Refund requested by customer.',
-                        'order_id' => $orderId,
-                      ) );
-                    $refund->save();
-                    $order->add_refund( $refund );
-                    $order->save();
-                }
 
             }
     elseif($data->payload->paymentStatus === 'paid')

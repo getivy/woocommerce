@@ -14,7 +14,7 @@ $cartHashId = $_GET['reference'];
 
 global $wpdb;
 $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
-$cart_results = $wpdb->get_results($wpdb->prepare("SELECT shipping_address, billing_address, cart_contents, coupon_code,  is_express FROM $custom_cart_session_table_name WHERE cart_hash_id = %s", $cartHashId));
+$cart_results = $wpdb->get_results($wpdb->prepare("SELECT customer_data, cart_contents, coupon_code,  is_express FROM $custom_cart_session_table_name WHERE cart_hash_id = %s", $cartHashId));
 $address_content = array();
 foreach ($cart_results as $cart_result) {
     $shipping_address = json_decode($cart_result->shipping_address);

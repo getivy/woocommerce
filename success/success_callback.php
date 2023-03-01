@@ -10,16 +10,11 @@ $cart_results = $wpdb->get_results($wpdb->prepare("SELECT order_id, cart_total, 
 
 foreach ($cart_results as $cart_result) {
    $orderId = $cart_result->order_id;
-   $cart_total = $cart_result->cart_total;
-   $is_express = $cart_result->is_express;
 }
 
 $order = wc_get_order($orderId);
-
-$order->set_total( $cart_total );
-$order->save();
-
 $order_key = $order->order_key;
 $woocommerce->cart->empty_cart();
+$order->update_status('processing');
 header('Location:' . $checkouturl . '?order-received=' . $orderId . '&key=' . $order_key);
 ?>

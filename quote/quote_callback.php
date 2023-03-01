@@ -40,10 +40,10 @@ if ($header_value === $hash) {
         $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
         $wpdb->update(
             $custom_cart_session_table_name,
-            array('address_contents' => $address_contents),
+            array('shipping_address' => $address_contents,
+            'billing_address' => $address_contents),
             array('cart_hash_id' => $cartHashId)
         );
-
 
         $country[] = $address['country'];
         $country_name = $address['country'];
@@ -161,7 +161,6 @@ if ($header_value === $hash) {
             $wpdb->update(
                 $custom_cart_session_table_name,
                 array('coupon_code' => $coupon_code,
-                      'cart_total' => $total
                     ),
                 array('cart_hash_id' => $cartHashId)
             );

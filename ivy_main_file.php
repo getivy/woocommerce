@@ -13,7 +13,7 @@ $table_name = $wpdb->prefix . 'ivy_address_table';
 function create_ivy_address_table()
 {
   global $wpdb;
-  $table_name = $wpdb->prefix . 'ivy_address_table';
+  // $table_name = $wpdb->prefix . 'ivy_address_table';
   $charset_collate = $wpdb->get_charset_collate();
   $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
 
@@ -28,9 +28,11 @@ function create_ivy_address_table()
         coupon_code varchar(255),
         user_id bigint(20),
         order_id bigint(20),
+        cart_total bigint(20),
         session_expiry datetime,
         cart_contents longtext,
-        address_contents longtext,
+        shipping_address longtext,
+        billing_address longtext,
         is_express BOOLEAN DEFAULT 0,
         PRIMARY KEY (id)
     ) $charset_collate;";
@@ -100,6 +102,8 @@ function save_cart_session_id_to_custom_table($cart_item_key, $product_id, $quan
 
 
 add_action('woocommerce_add_to_cart', 'save_cart_session_id_to_custom_table', 10, 6);
+// add_action('woocommerce_update_cart', 'save_cart_session_id_to_custom_table', 10, 6);
+
 register_activation_hook(__FILE__, 'create_ivy_address_table');
 add_action('plugins_loaded', 'ivypay_init', 0);
 function ivypay_init()
@@ -146,5 +150,38 @@ function ivy_pay()
   wp_enqueue_style('custom_css');
 }
 
+add_action( 'init', 'create_session_for_guest_user' );
+function create_session_for_guest_user() {
+    if ( is_user_logged_in() ) {
+        return;
+    }
+    if ( ! session_id() ) {
+        session_start();
+        if ( function_exists( 'WC' ) && WC() && WC()->session ) {
+          WC()->session->set_customer_session_cookie( true );
+      }
+
+    }
+    if ( ! isset( $_COOKIE['woocommerce_session'] ) ) {
+        $session_cookie = apply_filters( 'woocommerce_cookie_settings', array(
+            'name' => 'woocommerce_session',
+            'value' => '',
+            'expire' => strtotime( '+2 days' ),
+            'path' => '/',
+            'domain' => '',
+            'secure' => false,
+            'httponly' => true
+        ) );
+        setcookie( $session_cookie['name'], $session_cookie['value'], $session_cookie['expire'], $session_cookie['path'], $session_cookie['domain'], $session_cookie['secure'], $session_cookie['httponly'] );
+    }
+}
+function ivy_deactivate() {
+  global $wpdb;
+  $table_name = $wpdb->prefix . 'custom_cart_sessions';
+  $sql = "DROP TABLE IF EXISTS $table_name;";
+  $wpdb->query($sql);
+}
+// Hook the function to run on plugin deactivation
+register_deactivation_hook( __FILE__, 'ivy_deactivate' );
 
 ?>

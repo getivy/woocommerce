@@ -1,6 +1,5 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
-define('ABSPATH', dirname(__FILE__) . '/');
 require_once(ABSPATH . 'wp-includes/user.php');
 $request = file_get_contents("php://input");
 $data = json_decode($request);
@@ -9,32 +8,32 @@ $complete_request = $_GET;
 $shipping_method = $data->shippingMethod->reference;
 $shipping_title = $data->shippingMethod->name;
 $shipping_price = $data->shippingMethod->price;
-
-
+$total_price = $data->price->total;
 $order = new WC_Order();
 $cartHashId = $_GET['reference'];
 
 global $wpdb;
 $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
-$cart_results = $wpdb->get_results($wpdb->prepare("SELECT address_contents,cart_contents, coupon_code,  is_express FROM $custom_cart_session_table_name WHERE cart_hash_id = %s", $cartHashId));
+$cart_results = $wpdb->get_results($wpdb->prepare("SELECT shipping_address, billing_address, cart_contents, coupon_code,  is_express FROM $custom_cart_session_table_name WHERE cart_hash_id = %s", $cartHashId));
 $address_content = array();
 foreach ($cart_results as $cart_result) {
-    $address_content = json_decode($cart_result->address_contents);
+    $shipping_address = json_decode($cart_result->shipping_address);
+    $billing_address = json_decode($cart_result->billing_address);
     $cart = json_decode($cart_result->cart_contents);
     $coupon_code = $cart_result->coupon_code;
     $is_express = $cart_result->is_express;
 }
 
-//  if($is_express){
 $customer_data = array(
-    'first_name' => $address_content->first_name,
-    'last_name' => $address_content->last_name,
-    'email' => $address_content->email,
+    'first_name' => $billing_address->first_name,
+    'last_name' => $billing_address->last_name,
+    'email' => $billing_address->email,
 );
 $existing_customer = get_user_by('email', $customer_data['email']);
 if ($existing_customer) {
     $customer = new WC_Customer($existing_customer->ID);
-} else {
+}
+else {
     $customer = new WC_Customer();
     $customer->set_first_name($customer_data['first_name']);
     $customer->set_last_name($customer_data['last_name']);
@@ -42,9 +41,8 @@ if ($existing_customer) {
     $customer->save();
 }
 $order->set_customer_id($customer->get_id());
-
-$order->set_address($address_content, 'billing');
-$order->set_address($address_content, 'shipping');
+$order->set_address($billing_address, 'billing');
+$order->set_address($shipping_address, 'shipping');
 $shipping = new WC_Order_Item_Shipping();
 $shipping->set_method_title($shipping_title);
 $shipping->set_method_id($shipping_method);
@@ -52,11 +50,13 @@ $shipping->set_total($shipping_price);
 $order->add_item($shipping);
 
 if($coupon_code){
-   $coupon = new WC_Coupon( $coupon_code );
-   $item = new WC_Order_Item_Coupon();
-   $item->set_code( $coupon_code );
-   $item->set_discount( $coupon->get_amount() );
-   $order->add_item( $item );
+    $coupon = new WC_Coupon( $coupon_code );
+    $discount_total = $coupon->get_amount();
+    $item = new WC_Order_Item_Coupon();
+    $item->set_props( array( 'code' => $coupon_code, 'discount' => $discount_total ) );
+    $item->set_order_id( $order->get_id() );
+    $order->add_item( $item );
+
 }
 $order_key = $order->order_key;
 $cart_items = $cart;
@@ -79,7 +79,7 @@ foreach ($cart_items as $item_values) {
 $order->set_payment_method('ivy_payment');
 $order->set_payment_method_title('Ivy Payment');
 $order->calculate_totals();
-
+$order->set_total( $total_price );
 $orderId = $order->save();
 $wpdb->update(
     $custom_cart_session_table_name,

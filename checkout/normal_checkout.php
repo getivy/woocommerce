@@ -1,7 +1,7 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
 $formData = $_POST;
-$address = array(
+$billingaddress = array(
   'first_name' => $formData['billing_first_name'],
   'last_name' => $formData['billing_last_name'],
   'address_1' => $formData['billing_address_1'],
@@ -14,7 +14,32 @@ $address = array(
   'phone' => $formData['billing_phone'],
   'email' => $formData['billing_email'],
 );
-$address_contents = json_encode($address);
+
+$checkout = WC()->checkout();
+
+if (isset($_POST['ship_to_different_address']) && $_POST['ship_to_different_address'] === '1') {
+  $shippingaddress = array(
+    'first_name' => $formData['shipping_first_name'],
+    'last_name' => $formData['shipping_last_name'],
+    'address_1' => $formData['shipping_address_1'],
+    'address_2' => $formData['shipping_address_2'],
+    'company' => $formData['shipping_company'],
+    'city' => $formData['shipping_city'],
+    'state' => $formData['shipping_state'],
+    'postcode' => $formData['shipping_postcode'],
+    'country' => $formData['shipping_country'],
+  );
+  $shipping_address = json_encode($shippingaddress);
+
+}
+// else {
+//   error_log("second option");
+
+
+// }
+
+
+$billing_address = json_encode($billingaddress);
 $product = WC()->cart->get_cart();
 $cart = WC()->cart;
 $cart->calculate_shipping();
@@ -62,12 +87,19 @@ foreach ($db_cart_session_result as $result) {
 
 $session_expiry = date('Y-m-d H:i:s', time() + (2 * DAY_IN_SECONDS)); // set session expiry to 2 days from now
 $cart_contents = json_encode(WC()->cart->get_cart()); // convert cart contents to JSON
+global $woocommerce;
+$subtotal = WC()->cart->get_subtotal();
+$carttotal = $woocommerce->cart->total;
+$tax = WC()->cart->tax_total;
+$cart_id = WC()->cart->get_cart_hash();
+$currency = get_option('woocommerce_currency');
 if ($db_cart_session_id) {
   $wpdb->update(
     $custom_cart_session_table_name,
     array(
       'cart_contents' => $cart_contents,
-      'address_contents' => $address_contents,
+      'shipping_address' => $shipping_address,
+      'billing_address' => $billing_address,
       'shipping_title' => $shipping_label,
       'shipping_method' => $shipping_method_id,
       'shipping_price' => $shipping_total,
@@ -82,7 +114,8 @@ if ($db_cart_session_id) {
     array(
       'cart_contents' => $cart_contents,
       'cart_session_id' => $cart_session_id,
-      'address_contents' => $address_contents,
+      'shipping_address' => $shipping_address,
+      'billing_address' => $billing_address,
       'shipping_title' => $shipping_label,
       'shipping_method' => $shipping_method_id,
       'shipping_price' => $shipping_total,
@@ -102,12 +135,7 @@ if ($db_cart_session_id) {
   )
   );
 }
-global $woocommerce;
-$subtotal = WC()->cart->get_subtotal();
-$carttotal = $woocommerce->cart->total;
-$tax = WC()->cart->tax_total;
-$cart_id = WC()->cart->get_cart_hash();
-$currency = get_option('woocommerce_currency');
+
 $ivyLineItems = array();
 global $woocommerce, $post;
 foreach ($product as $item => $values) {
@@ -139,8 +167,7 @@ foreach ($applied_coupons as $coupon_code) {
     $wpdb->update(
       $custom_cart_session_table_name,
       array(
-        'coupon_code' => $coupon_codes,
-        'cart_total' => $carttotal
+        'coupon_code' => $coupon_code,
       ),
       array('cart_hash_id' => $unique_id)
     );

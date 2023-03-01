@@ -17,7 +17,19 @@ $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
 $cart_results = $wpdb->get_results($wpdb->prepare("SELECT customer_data, cart_contents, coupon_code,  is_express FROM $custom_cart_session_table_name WHERE cart_hash_id = %s", $cartHashId));
 $address_content = array();
 foreach ($cart_results as $cart_result) {
-    $shipping_address = json_decode($cart_result->shipping_address);
+    $shipping_address = array(
+            'first_name' => $data->shippingAddress->firstName ?? '',
+            'last_name' => $data->shippingAddress->lastName ?? '',
+            'address_1' => $data->shippingAddress->line1,
+            'address_2' => $data->shippingAddress->line2 ?? '',
+            'company' => '',
+            'city' => $data->shippingAddress->city,
+            'state' => $data->shippingAddress->region ?? '',
+            'postcode' => $data->shippingAddress->zipCode,
+            'country' => $data->shippingAddress->country,
+            'phone' => $customerData['phone'],
+            'email' => $customerData['email'],
+        );
     $billing_address = json_decode($cart_result->billing_address);
     $cart = json_decode($cart_result->cart_contents);
     $coupon_code = $cart_result->coupon_code;

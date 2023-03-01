@@ -30,7 +30,19 @@ foreach ($cart_results as $cart_result) {
             'phone' => $customerData['phone'],
             'email' => $customerData['email'],
         );
-    $billing_address = json_decode($cart_result->billing_address);
+    $billing_address = array(
+            'first_name' => $data->billingAddress->firstName ?? '',
+            'last_name' => $data->billingAddress->lastName ?? '',
+            'address_1' => $data->billingAddress->line1,
+            'address_2' => $data->billingAddress->line2 ?? '',
+            'company' => '',
+            'city' => $data->billingAddress->city,
+            'state' => $data->billingAddress->region ?? '',
+            'postcode' => $data->billingAddress->zipCode,
+            'country' => $data->billingAddress->country,
+            'phone' => $customerData['phone'],
+            'email' => $customerData['email'],
+        );
     $cart = json_decode($cart_result->cart_contents);
     $coupon_code = $cart_result->coupon_code;
     $is_express = $cart_result->is_express;

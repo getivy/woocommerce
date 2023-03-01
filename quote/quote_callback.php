@@ -40,8 +40,7 @@ if ($header_value === $hash) {
         $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
         $wpdb->update(
             $custom_cart_session_table_name,
-            array('shipping_address' => $address_contents,
-            'billing_address' => $address_contents),
+            array('customer_data' => $customer_data),
             array('cart_hash_id' => $cartHashId)
         );
 

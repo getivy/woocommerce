@@ -94,7 +94,7 @@ class Ivy_Pay extends WC_Payment_Gateway
         'desc' => __('Select No for dark theme', 'ivypay'),
       ),
       'button_show_product' => array(
-        'title' => __('Show button on product page', 'ivyPay'),
+        'title' => __('Show button on Product Detail Page', 'ivyPay'),
         'type' => 'select',
         'options' => array(
           'Yes' => __('Yes', 'ivypay'),

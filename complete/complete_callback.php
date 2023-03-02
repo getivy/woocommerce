@@ -1,6 +1,29 @@
 <?php
 require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
 require_once(ABSPATH . 'wp-includes/user.php');
+
+$installed_payment_methods = WC()->payment_gateways()->payment_gateways();
+$ivysandboxsecret = $installed_payment_methods["ivy_payment"]->ivysigningsecret;
+$option = $installed_payment_methods["ivy_payment"]->sandbox;
+$ivylivesecret = $installed_payment_methods["ivy_payment"]->ivysigningsecretlive;
+$ivysecret = $ivysandboxsecret;
+if ($option == "No") {
+    $ivysecret = $ivylivesecret;
+}
+$header = getallheaders();
+$header_value = $header['X-Ivy-Signature'];
+$cartHashId = $_GET['reference'];
+$request = file_get_contents("php://input");
+$hash = hash_hmac(
+    'sha256',
+    $request,
+    $ivysecret
+);
+
+if ($header_value !== $hash) {
+    return false;
+}
+
 $request = file_get_contents("php://input");
 $data = json_decode($request);
 $cartHashId = $_GET['reference'];
@@ -16,8 +39,10 @@ global $wpdb;
 $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
 $cart_results = $wpdb->get_results($wpdb->prepare("SELECT customer_data, cart_contents, coupon_code,  is_express FROM $custom_cart_session_table_name WHERE cart_hash_id = %s", $cartHashId));
 $address_content = array();
-$customer_data = json_decode($cart_result->customer_data);
+$customerData = json_decode($cart_result->customer_data);
+
 foreach ($cart_results as $cart_result) {
+
     $shipping_address = array(
             'first_name' => $data->shippingAddress->firstName ?? '',
             'last_name' => $data->shippingAddress->lastName ?? '',
@@ -28,9 +53,10 @@ foreach ($cart_results as $cart_result) {
             'state' => $data->shippingAddress->region ?? '',
             'postcode' => $data->shippingAddress->zipCode,
             'country' => $data->shippingAddress->country,
-            'phone' => $customerData['phone'],
-            'email' => $customerData['email'],
-        );
+            'phone' => $customerData->phone,
+            'email' => $customerData->email,
+    );
+
     $billing_address = array(
             'first_name' => $data->billingAddress->firstName ?? '',
             'last_name' => $data->billingAddress->lastName ?? '',
@@ -41,9 +67,10 @@ foreach ($cart_results as $cart_result) {
             'state' => $data->billingAddress->region ?? '',
             'postcode' => $data->billingAddress->zipCode,
             'country' => $data->billingAddress->country,
-            'phone' => $customerData['phone'],
-            'email' => $customerData['email'],
-        );
+            'phone' => $customerData->phone,
+            'email' => $customerData->email,
+    );
+
     $cart = json_decode($cart_result->cart_contents);
     $coupon_code = $cart_result->coupon_code;
     $is_express = $cart_result->is_express;
@@ -54,17 +81,19 @@ $customer_data = array(
     'last_name' => $billing_address->last_name,
     'email' => $billing_address->email,
 );
+
 $existing_customer = get_user_by('email', $customer_data['email']);
+
 if ($existing_customer) {
     $customer = new WC_Customer($existing_customer->ID);
-}
-else {
+} else {
     $customer = new WC_Customer();
     $customer->set_first_name($customer_data['first_name']);
     $customer->set_last_name($customer_data['last_name']);
     $customer->set_email($customer_data['email']);
     $customer->save();
 }
+
 $order->set_customer_id($customer->get_id());
 $order->set_address($billing_address, 'billing');
 $order->set_address($shipping_address, 'shipping');
@@ -81,7 +110,6 @@ if($coupon_code){
     $item->set_props( array( 'code' => $coupon_code, 'discount' => $discount_total ) );
     $item->set_order_id( $order->get_id() );
     $order->add_item( $item );
-
 }
 $order_key = $order->order_key;
 $cart_items = $cart;

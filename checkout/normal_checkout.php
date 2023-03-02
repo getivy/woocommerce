@@ -14,9 +14,9 @@ $billingaddress = array(
   'phone' => $formData['billing_phone'],
   'email' => $formData['billing_email'],
 );
-
+​
 $checkout = WC()->checkout();
-
+​
 if (isset($_POST['ship_to_different_address']) && $_POST['ship_to_different_address'] === '1') {
   $shippingaddress = array(
     'first_name' => $formData['shipping_first_name'],
@@ -30,22 +30,19 @@ if (isset($_POST['ship_to_different_address']) && $_POST['ship_to_different_addr
     'country' => $formData['shipping_country'],
   );
   $shipping_address = json_encode($shippingaddress);
-
 }
-// else {
-//   error_log("second option");
-
-
-// }
-
-
+else {
+  $shipping_address = json_encode($billingaddress); 
+}
+​
+​
 $billing_address = json_encode($billingaddress);
 $product = WC()->cart->get_cart();
 $cart = WC()->cart;
 $cart->calculate_shipping();
 $shipping_total = WC()->cart->get_shipping_total();
 $shipping_country[] = $formData['shipping_country'];
-
+​
 foreach (WC()->session->get('shipping_for_package_0')['rates'] as $method_id => $rate) {
   $shipping_method_id = $method_id;
   if (WC()->session->get('chosen_shipping_methods')[0] == $method_id) {
@@ -61,7 +58,7 @@ foreach (WC()->session->get('shipping_for_package_0')['rates'] as $method_id => 
     break;
   }
 }
-
+​
 global $wpdb;
 $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
 $session = WC()->session;
@@ -75,16 +72,16 @@ $db_cart_session_result = $wpdb->get_results(
 $user_id_result = $wpdb->get_results(
   $wpdb->prepare("SELECT user_id, cart_session_id FROM $custom_cart_session_table_name WHERE user_id = %d", $user_id)
 );
-
+​
 $db_user_id = '';
 $db_cart_session_id = ''; foreach ($user_id_result as $result) {
   $db_user_id = $result->user_id;
 }
-
+​
 foreach ($db_cart_session_result as $result) {
   $db_cart_session_id = $result->cart_session_id;
 }
-
+​
 $session_expiry = date('Y-m-d H:i:s', time() + (2 * DAY_IN_SECONDS)); // set session expiry to 2 days from now
 $cart_contents = json_encode(WC()->cart->get_cart()); // convert cart contents to JSON
 global $woocommerce;
@@ -135,7 +132,7 @@ if ($db_cart_session_id) {
   )
   );
 }
-
+​
 $ivyLineItems = array();
 global $woocommerce, $post;
 foreach ($product as $item => $values) {
@@ -148,7 +145,7 @@ foreach ($product as $item => $values) {
   $items['image'] = get_the_post_thumbnail_url($values['product_id'], 'thumbnail');
   $ivyLineItems[] = $items;
 }
-
+​
 $applied_coupons = $cart->get_applied_coupons();
 foreach ($applied_coupons as $coupon_code) {
   $coupon = new WC_Coupon($coupon_code);
@@ -173,7 +170,7 @@ foreach ($applied_coupons as $coupon_code) {
     );
   }
 }
-
+​
 $prefill = ["email" => $formData['billing_email']];
 $billingAddress = array(
   'firstName' => $formData['billing_first_name'],
@@ -183,14 +180,14 @@ $billingAddress = array(
   'zipCode' => $formData['billing_postcode'],
   'country' => $formData['billing_country'],
 );
-
+​
 $shippingMethods[] = [
   'price' => $shipping_total,
   'name' => $shipping_label,
   'countries' => $shipping_country,
   'reference' => $shipping_method_id
 ];
-
+​
 $price = array(
   'totalNet' => $subtotal,
   'vat' => $tax ? $tax : 0,
@@ -208,8 +205,8 @@ $data = [
   'billingAddress' => $billingAddress,
   'prefill' => $prefill,
 ];
-
-
+​
+​
 $url = "https://api.sand.getivy.de/api/service/checkout/session/create";
 $post = json_encode($data); # all data that going to send
 $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
@@ -226,7 +223,7 @@ curl_setopt($ch, CURLOPT_URL, $url);
 curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
+​
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
 curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT    5.0');

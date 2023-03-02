@@ -69,7 +69,7 @@ class Ivy_Pay extends WC_Payment_Gateway
         'type' => 'text',
       ),
       'ivysigningsecretlive' => array(
-        'title' => __('Live webhook signing secret', 'ivyPay'),
+        'title' => __('Live Webhook Signing Secret', 'ivyPay'),
         'type' => 'text',
       ),
       'sortorder' => array(

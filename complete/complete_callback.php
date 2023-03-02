@@ -39,7 +39,7 @@ if ($is_express) {
         'state' => $data->shippingAddress->region,
         'postcode' => $data->shippingAddress->zipCode,
         'country' => $data->shippingAddress->country,
-        'phone' => $customerData->phone,
+        'phone' => $billing_address->phone,
         'email' => $customerData->email,
     );
 
@@ -53,7 +53,7 @@ if ($is_express) {
         'state' => $data->billingAddress->region ? $data->billingAddress->region : '',
         'postcode' => $data->billingAddress->zipCode ? $data->billingAddress->zipCode : '',
         'country' => $data->billingAddress->country ? $data->billingAddress->country : '',
-        'phone' => $customerData->phone,
+        'phone' => $billing_address->phone,
         'email' => $customerData->email,
     );
 }

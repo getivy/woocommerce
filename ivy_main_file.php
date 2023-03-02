@@ -102,7 +102,62 @@ function save_cart_session_id_to_custom_table($cart_item_key, $product_id, $quan
 
 
 add_action('woocommerce_add_to_cart', 'save_cart_session_id_to_custom_table', 10, 6);
-// add_action('woocommerce_update_cart', 'save_cart_session_id_to_custom_table', 10, 6);
+add_action( 'woocommerce_update_cart_action_cart_updated', 'update_cart_in_custom_table', 10, 1 );
+function update_cart_in_custom_table( $cart_updated ) {
+  global $wpdb;
+  $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
+  $session = WC()->session;
+  $cart_session_id = $session->get_session_cookie();
+  $user_id = get_current_user_id();
+  $cart_session_id = (string) $cart_session_id[3];
+  $db_cart_session_result = $wpdb->get_results(
+    $wpdb->prepare("SELECT cart_session_id FROM $custom_cart_session_table_name WHERE cart_session_id = %s", $cart_session_id)
+  );
+  $user_id_result = $wpdb->get_results(
+    $wpdb->prepare("SELECT user_id, cart_session_id FROM $custom_cart_session_table_name WHERE user_id = %d", $user_id)
+  );
+
+  $db_user_id = '';
+  $db_cart_session_id = '';
+  foreach ($user_id_result as $result) {
+    $db_user_id = $result->user_id;
+  }
+
+  foreach ($db_cart_session_result as $result) {
+    $db_cart_session_id = $result->cart_session_id;
+  }
+  $user_id = get_current_user_id();
+  $session_expiry = date('Y-m-d H:i:s', time() + (2 * DAY_IN_SECONDS)); // set session expiry to 2 days from now
+  $cart_contents = json_encode(WC()->cart->get_cart());
+  if ($db_cart_session_id) {
+    $wpdb->update(
+      $custom_cart_session_table_name,
+      array(
+        'cart_contents' => $cart_contents,
+        'coupon_code' => ""
+      ),
+      array('cart_session_id' => $cart_session_id)
+    );
+  } elseif ($db_user_id) {
+    $wpdb->update(
+      $custom_cart_session_table_name,
+      array(
+        'cart_contents' => $cart_contents,
+        'cart_session_id' => $cart_session_id,
+        'coupon_code' => ""
+      ),
+      array('user_id' => $user_id)
+    );
+  } else {
+    $wpdb->insert($custom_cart_session_table_name, array(
+      'cart_session_id' => $cart_session_id,
+      'user_id' => $user_id,
+      'session_expiry' => $session_expiry,
+      'cart_contents' => $cart_contents,
+    )
+    );
+  }
+}
 
 register_activation_hook(__FILE__, 'create_ivy_address_table');
 add_action('plugins_loaded', 'ivypay_init', 0);

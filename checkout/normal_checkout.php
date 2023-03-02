@@ -210,7 +210,7 @@ $data = [
 ];
 
 
-$url = "https://api.stage.getivy.de/api/service/checkout/session/create";
+$url = "https://api.sand.getivy.de/api/service/checkout/session/create";
 $post = json_encode($data); # all data that going to send
 $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
 $ivysandboxkey = $installed_payment_methods["ivy_payment"]->ivyapikey;

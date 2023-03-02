@@ -38,7 +38,7 @@ class Ivy_Pay extends WC_Payment_Gateway
       'enabled' => array(
         'title' => __('Enable/Disable', 'woocommerce'),
         'type' => 'checkbox',
-        'label' => __('Enable Custom Payment Method', 'woocommerce'),
+        'label' => __('Enable Ivy', 'woocommerce'),
         'default' => 'yes'
       ),
       'description' => array(

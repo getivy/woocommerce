@@ -13,7 +13,7 @@ function ivyconfig_updated_option()
         'completeCallbackUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/complete/complete_callback.php',
         'shopLogo' => 'https://49ff7bbedf.nxcli.net/media/logo/stores/1/schraubdoc_final_logo-2019-v4-lang-375x100.png'
     ];
-    $url = "https://api.stage.getivy.de/api/service/merchant/update";
+    $url = "https://api.sand.getivy.de/api/service/merchant/update";
     $post = json_encode($data, JSON_UNESCAPED_SLASHES);
     $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
     $ivysandboxkey = $installed_payment_methods["ivy_payment"]->ivyapikey;

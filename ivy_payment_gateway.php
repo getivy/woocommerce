@@ -77,7 +77,7 @@ class Ivy_Pay extends WC_Payment_Gateway
         'type' => 'text',
       ),
       'product_page_theme' => array(
-        'title' => __('Light theme on Catalog Product Page', 'ivyPay'),
+        'title' => __('Light theme on Product Detail Page', 'ivyPay'),
         'type' => 'select',
         'options' => array(
           'No' => __('No', 'ivypay'),

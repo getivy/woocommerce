@@ -1,6 +1,6 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
-
+// require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
+function webhook_callback(){
 $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
 $option = $installed_payment_methods["ivy_payment"]->sandbox;
 if ($option == "No") {
@@ -16,7 +16,6 @@ $hash = hash_hmac(
     $request,
     $ivysecret
 );
-
 if ($header_value === $hash) {
 
     $data = json_decode($request);
@@ -66,5 +65,6 @@ if ($header_value === $hash) {
 }
 else {
     return false;
+}
 }
 ?>

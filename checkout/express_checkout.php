@@ -1,5 +1,7 @@
 <?php
-require_once($_SERVER['DOCUMENT_ROOT'] . '/wp-load.php');
+add_action('wp_ajax_express_function', 'express_function');
+add_action('wp_ajax_nopriv_express_function', 'express_function');
+function express_function(){
 $product = WC()->cart->get_cart();
 $cart = WC()->cart;
 $session = WC()->session;
@@ -112,9 +114,11 @@ $exe = curl_exec($ch);
 $getInfo = curl_getinfo($ch);
 if ($getInfo['http_code'] === 200) {
     echo $exe;
+    exit();
 }
 if (curl_error($ch)) {
     $output .= "\n" . curl_error($ch);
 }
 curl_close($ch);
+}
 ?>

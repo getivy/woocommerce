@@ -9,10 +9,10 @@ function ivy_button_product_page()
         global $product;
         $id = $product->id;
         $locale = "de";
-        $locale = get_locale();
-        if (str_contains($locale, 'en')) {
+        $getlocale = get_locale();
+        if (strpos($getlocale, 'en') !== false) {
             $locale = "en";
-        }
+        }   
         $option = $installed_payment_methods["ivy_payment"]->product_page_theme;
         $visibility = $installed_payment_methods["ivy_payment"]->button_show_product;
         $carttotal = WC()->cart->cart_contents_total;
@@ -34,10 +34,10 @@ function ivy_button_cart_page()
     $enabled = $installed_payment_methods["ivy_payment"]->enabled;
     if ($enabled == 'yes') {
         $locale = "de";
-        $locale = get_locale();
-        if (str_contains($locale, 'en')) {
+        $getlocale = get_locale();
+        if (strpos($getlocale, 'en') !== false) {
             $locale = "en";
-        }
+        }  
         $carttotal = WC()->cart->cart_contents_total;
         $theme = 'dark';
         if ($option == 'Yes') {
@@ -57,10 +57,10 @@ function ivy_button_checkout_page()
     $enabled = $installed_payment_methods["ivy_payment"]->enabled;
     if ($enabled == 'yes') {
         $locale = "de";
-        $locale = get_locale();
-        if (str_contains($locale, 'en')) {
+        $getlocale = get_locale();
+        if (strpos($getlocale, 'en') !== false) {
             $locale = "en";
-        }
+        }  
         $carttotal = WC()->cart->cart_contents_total;
     echo '<button class="ivy-checkout-button" type="button" data-cart-value=' . $carttotal . '
     data-cart-value=' . get_option('woocommerce_currency') . '
@@ -73,12 +73,6 @@ function custom_button_on_payment_method_change() {
     $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
     $enabled = $installed_payment_methods["ivy_payment"]->enabled;
     if ($enabled == 'yes') {
-        $locale = "de";
-        $locale = get_locale();
-        if (str_contains($locale, 'en')) {
-            $locale = "en";
-        }
-        $carttotal = WC()->cart->cart_contents_total;
     echo '<button id="checkout_ivy" style="display:none;" class="checkout_ivy" type="button">Order With Ivy</button>';
     }
   

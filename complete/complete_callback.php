@@ -1,7 +1,5 @@
 <?php
-require_once $_SERVER['DOCUMENT_ROOT'] . '/wp-load.php';
-require_once ABSPATH . 'wp-includes/user.php';
-
+function complete_callback() {
 $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
 $ivysandboxsecret = $installed_payment_methods["ivy_payment"]->ivysigningsecret;
 $option = $installed_payment_methods["ivy_payment"]->sandbox;
@@ -40,6 +38,7 @@ if ($header_value === $hash) {
     foreach ($cart_results as $cart_result) {
         $shipping_address = json_decode($cart_result->shipping_address);
         $billing_address = json_decode($cart_result->billing_address);
+        error_log(print_r($shipping_address,true));
         $cart = json_decode($cart_result->cart_contents);
         $coupon_code = $cart_result->coupon_code;
         $is_express = $cart_result->is_express;
@@ -98,15 +97,7 @@ if ($header_value === $hash) {
     $shipping->set_total($shipping_price);
     $order->add_item($shipping);
 
-    if ($coupon_code) {
-        $coupon = new WC_Coupon($coupon_code);
-        $discount_total = $coupon->get_amount();
-        $item = new WC_Order_Item_Coupon();
-        $item->set_props(array('code' => $coupon_code, 'discount' => $discount_total));
-        $item->set_order_id($order->get_id());
-        $order->add_item($item);
-
-    }
+ 
     $order_key = $order->order_key;
     $cart_items = $cart;
     foreach ($cart_items as $item_values) {
@@ -127,8 +118,10 @@ if ($header_value === $hash) {
 
     $order->set_payment_method('ivy_payment');
     $order->set_payment_method_title('Ivy Payment');
+    if ($coupon_code) {
+        $order->apply_coupon( $coupon_code );
+    }
     $order->calculate_totals();
-    $order->set_total($total_price);
     $orderId = $order->save();
     $wpdb->update(
         $custom_cart_session_table_name,
@@ -139,7 +132,7 @@ if ($header_value === $hash) {
     global $woocommerce;
     session_start();
     $data = [
-        'redirectUrl' => get_site_url() . '/wp-content/plugins/Ivy_Payment/success/success_callback.php',
+        'redirectUrl' => get_site_url() . '/wp-json/ivy/v1/success_callback/',
         'displayId' => $order_id,
     ];
     $hash = hash_hmac(
@@ -152,4 +145,6 @@ if ($header_value === $hash) {
     echo json_encode($data);
 } else {
     return false;
+}
+
 }

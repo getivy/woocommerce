@@ -24,30 +24,60 @@ jQuery(document).ready(function () {
     });
     // Express Checkout Function
     function expressCheckout() {
-        var linkUrl = document.location.origin + '/wp-content/plugins/Ivy_Payment/checkout/express_checkout.php';
-        console.log(linkUrl);
+        var express_data = {
+            "action": "express_function"
+        };
+
         jQuery.ajax({
             type: "post",
             dataType: "json",
-            url: linkUrl,
+            url: ajax.url,
+            data: express_data,
             success: function (response) {
+                console.log(response);
                 window.startIvyCheckout(response.redirectUrl, 'popup')
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log(jqXHR);
+                console.log(textStatus);
+                console.log(errorThrown);
             }
         });
     }
 
     function startNormalCheckout() {
-        var linkUrl = document.location.origin + '/wp-content/plugins/Ivy_Payment/checkout/normal_checkout.php';
-        var formData = jQuery('form.checkout').serializeArray();
-        jQuery.ajax({
-            type: "post",
-            dataType: "json",
-            url: linkUrl,
-            data: formData,
-            success: function (response) {
-                window.startIvyCheckout(response.redirectUrl, 'popup')
-            }
-        });
+
+        var obj = {};
+          
+            var form_data = jQuery('form.checkout').serializeArray();
+                jQuery.each(form_data, function (key, input) {
+                obj[input.name] = input.value;
+            });
+        
+            var normal_data = {
+                "action": "normal_function",
+                "data": obj
+            };
+
+            jQuery.ajax({
+                type: "post",
+                datatype: "json",
+                url: ajax.url,
+                data: normal_data,
+            
+                success: function (response) {
+                    console.log(response);
+                    window.startIvyCheckout(response, 'popup')
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.log(jqXHR);
+                    console.log(textStatus);
+                    console.log(errorThrown);
+                }
+            });
+
+
+
     }
     function checkPaymentMethod() {
           

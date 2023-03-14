@@ -22,6 +22,7 @@ function create_ivy_address_table()
         id bigint(20) NOT NULL AUTO_INCREMENT,
         cart_session_id varchar(32) NOT NULL,
         cart_hash_id varchar(50) NOT NULL,
+        ivy_order_id varchar(50),
         shipping_title varchar(100),
         shipping_method varchar(100),
         shipping_price float(10,2),
@@ -169,6 +170,11 @@ function ivypay_init()
   include_once('ivy_payment_gateway.php');
   include_once(plugin_dir_path(__FILE__) . '/frontend/buttons.php');
   include_once(plugin_dir_path(__FILE__) . '/update_settings/update_merchant.php');
+  include_once(plugin_dir_path(__FILE__) . '/checkout/express_checkout.php');
+  include_once(plugin_dir_path(__FILE__) . '/checkout/normal_checkout.php');
+  include_once(plugin_dir_path(__FILE__) . '/success/success_callback.php');
+  include_once(plugin_dir_path(__FILE__) . '/complete/complete_callback.php');
+  include_once(plugin_dir_path(__FILE__) . '/webhook/webhook_callback.php');
 
   add_filter('woocommerce_payment_gateways', 'ivy_gateway');
   function ivy_gateway($methods)
@@ -211,32 +217,96 @@ function create_session_for_guest_user() {
         return;
     }
     if ( ! session_id() ) {
-        session_start();
         if ( function_exists( 'WC' ) && WC() && WC()->session ) {
           WC()->session->set_customer_session_cookie( true );
       }
 
     }
-    if ( ! isset( $_COOKIE['woocommerce_session'] ) ) {
-        $session_cookie = apply_filters( 'woocommerce_cookie_settings', array(
-            'name' => 'woocommerce_session',
-            'value' => '',
-            'expire' => strtotime( '+2 days' ),
-            'path' => '/',
-            'domain' => '',
-            'secure' => false,
-            'httponly' => true
-        ) );
-        setcookie( $session_cookie['name'], $session_cookie['value'], $session_cookie['expire'], $session_cookie['path'], $session_cookie['domain'], $session_cookie['secure'], $session_cookie['httponly'] );
+}
+
+add_action( 'woocommerce_order_refunded', 'my_custom_refund_action', 10, 2 );
+function my_custom_refund_action( $order_id, $refund_id ) {
+    $order = wc_get_order( $order_id );
+    $payment_method = $order->get_payment_method();
+    $order_amount = $order->get_total();
+    $refunds = $order->get_refunds();
+    if ($refunds) {
+      foreach ($refunds as $refund) {
+          $refund_amount = $refund->get_amount();
+      }
     }
+    if ( $payment_method === 'ivy_payment' ) {
+      global $wpdb;
+      $custom_cart_session_table_name = $wpdb->prefix . 'custom_cart_sessions';
+      $cart_results = $wpdb->get_results($wpdb->prepare("SELECT ivy_order_id FROM $custom_cart_session_table_name WHERE order_id = %s", $order_id));
+      foreach ($cart_results as $cart_result) {
+        $ivyorderId = $cart_result->ivy_order_id;
+      }
+      $data = [
+        'orderId' => $ivyorderId,
+        'amount' => $refund_amount,
+    ];
+
+    $url = "https://api.sand.getivy.de/api/service/merchant/payment/refund";
+    $post = json_encode($data); # all data that going to send
+    $installed_payment_methods = WC()->payment_gateways()->payment_gateways();
+    $ivysandboxkey = $installed_payment_methods["ivy_payment"]->ivyapikey;
+    $option = $installed_payment_methods["ivy_payment"]->sandbox;
+    $ivylivekey = $installed_payment_methods["ivy_payment"]->ivyapikeylive;
+    $ivykey = $ivysandboxkey;
+    if ($option == "No") {
+      $ivykey = $ivylivekey;
+      $url = "https://api.getivy.de/api/service/merchant/payment/refund";
+    }
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 5.01; Windows NT    5.0');
+    $headers = [
+      'content-type: application/json',
+      'X-Ivy-Api-Key:'.$ivykey.''
+      ];
+    curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+    $exe = curl_exec($ch);
+    error_log($exe);
+    if (curl_error($ch)) {
+        $output .= "\n" . curl_error($ch);
+    }
+    curl_close($ch);
 }
-function ivy_deactivate() {
-  global $wpdb;
-  $table_name = $wpdb->prefix . 'custom_cart_sessions';
-  $sql = "DROP TABLE IF EXISTS $table_name;";
-  $wpdb->query($sql);
 }
-// Hook the function to run on plugin deactivation
-register_deactivation_hook( __FILE__, 'ivy_deactivate' );
+
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'ivy/v1', '/success_callback/', array(
+    'methods' => 'GET',
+    'callback' => 'success_callback',
+    'permission_callback' => '__return_true'
+  ) );
+  register_rest_route( 'ivy/v1', '/complete_callback/', array(
+    'methods' => 'POST',
+    'callback' => 'complete_callback',
+    'permission_callback' => '__return_true'
+  ) );
+  register_rest_route( 'ivy/v1', '/quote_callback/', array(
+    'methods' => 'POST',
+    'callback' => 'quote_callback',
+    'permission_callback' => '__return_true'
+  ) );
+  register_rest_route( 'ivy/v1', '/failed_callback/', array(
+    'methods' => 'POST',
+    'callback' => 'failed_callback',
+    'permission_callback' => '__return_true'
+  ) );
+  register_rest_route( 'ivy/v1', '/webhook_callback/', array(
+    'methods' => 'POST',
+    'callback' => 'webhook_callback',
+    'permission_callback' => '__return_true'
+  ) );
+} );
 
 ?>
